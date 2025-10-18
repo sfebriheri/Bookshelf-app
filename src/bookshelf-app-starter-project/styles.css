@@ -1,0 +1,108 @@
+/* Bookshelf App Styling */
+:root {
+  --bg: #0f172a; /* slate-900 */
+  --panel: #111827; /* gray-900 */
+  --muted: #9ca3af; /* gray-400 */
+  --text: #e5e7eb; /* gray-200 */
+  --accent: #38bdf8; /* sky-400 */
+  --accent-2: #22c55e; /* green-500 */
+  --danger: #ef4444; /* red-500 */
+  --warning: #f59e0b; /* amber-500 */
+  --card: #1f2937; /* gray-800 */
+  --border: #334155; /* slate-700 */
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+header {
+  background: linear-gradient(90deg, var(--panel), #0b1220);
+  border-bottom: 1px solid var(--border);
+  padding: 24px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 0.5px;
+}
+
+main {
+  max-width: 960px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+h2 { margin-top: 0; font-size: 18px; }
+
+/* Forms */
+form { display: grid; gap: 12px; }
+form > div { display: grid; gap: 6px; }
+label { color: var(--muted); font-size: 14px; }
+input[type="text"], input[type="number"] {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+input[type="checkbox"] { width: 18px; height: 18px; }
+
+button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #0b1220;
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.02s ease, border-color 0.2s ease, background 0.2s ease;
+}
+button:hover { border-color: var(--accent); }
+button:active { transform: translateY(1px); }
+
+/* Book lists */
+#incompleteBookList, #completeBookList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.book-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.book-title { margin: 0 0 6px; font-size: 16px; }
+.book-meta { color: var(--muted); font-size: 14px; margin: 4px 0; }
+
+.book-actions { display: flex; gap: 8px; margin-top: 10px; }
+.btn { font-weight: 600; }
+.btn-toggle { border-color: var(--accent-2); }
+.btn-delete { border-color: var(--danger); }
+.btn-edit { border-color: var(--accent); }
+
+/* Edit form inside card */
+.book-edit-form { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+.book-edit-form label { font-size: 13px; }
+.book-edit-form input { width: 100%; }
+.book-edit-form button { margin-right: 6px; }
+
+/* Utility */
+#bookFormSubmit span { color: var(--warning); font-weight: 700; }

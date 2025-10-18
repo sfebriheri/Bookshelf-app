@@ -13,7 +13,8 @@
   "devDependencies": {
     "eslint": "^7.25.0",
     "eslint-config-google": "^0.14.0",
-    "nodemon": "^2.0.7"
+    "nodemon": "^2.0.7",
+    "vite": "^7.1.10"
   },
   "dependencies": {
     "@hapi/hapi": "^20.1.2",

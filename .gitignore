@@ -1,2 +1,65 @@
-#ignore node_modules
-/node_modules
+# =========================================
+# Gitignore untuk proyek Bookshelf-API (Node.js + Vite)
+# =========================================
+
+# Dependency managers
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# Build output / bundling
+Dist/
+dist/
+build/
+out/
+.esbuild/
+.rollup.cache/
+.tmp/
+tmp/
+temp/
+
+# Vite / tooling cache
+.vite/
+.cache/
+.eslintcache
+
+# Coverage / testing
+coverage/
+.nyc_output/
+
+# Env files (jangan commit rahasia)
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Logs & pids
+logs/
+*.log
+*.pid
+*.pid.lock
+
+# Editors & IDE
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache (opsional jika pakai uv/http.server)
+__pycache__/
+*.pyc
+*.pyo
+
+# Misc temp files
+*.swp
+*.swo
