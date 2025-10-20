@@ -5,7 +5,6 @@
  * Renders books and supports add/search/toggle/edit/delete via API.
  */
 
-const API_BASE = 'http://localhost:5000';
 
 const els = {
   form: document.getElementById('bookForm'),
@@ -30,56 +29,37 @@ function setSubmitButtonText() {
   span.textContent = text;
 }
 
+/** Local storage key for frontend-only bookshelf data. */
+const STORAGE_KEY = 'bookshelf_books';
+
 /**
- * Fetch JSON with error handling.
- * @param {string} url
- * @param {RequestInit=} options
- * @return {Promise<any>}
+ * Load books array from localStorage.
+ * @return {Array<Object>}
  */
-async function fetchJSON(url, options = {}) {
-  const res = await fetch(url, {
-    headers: {'Content-Type': 'application/json'},
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = data && data.message ? data.message : 'HTTP ' + res.status;
-    throw new Error(msg);
+function loadBooks() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch (e) {
+    return [];
   }
-  return data;
 }
 
 /**
- * Get books summary list filtered by finished.
- * @param {boolean} finished
- * @return {Promise<Array<{id:string,name:string,publisher:string}>>}
+ * Persist books array to localStorage.
+ * @param {Array<Object>} books
  */
-async function getBooksByFinished(finished) {
-  const url = API_BASE + '/books?finished=' + (finished ? 1 : 0);
-  const data = await fetchJSON(url);
-  return (data && data.data && data.data.books) || [];
+function saveBooks(books) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
 }
 
 /**
- * Get books summary list filtered by name.
- * @param {string} name
- * @return {Promise<Array<{id:string,name:string,publisher:string}>>}
+ * Generate a simple unique id.
+ * @return {string}
  */
-async function getBooksByName(name) {
-  const q = encodeURIComponent(name);
-  const data = await fetchJSON(API_BASE + '/books?name=' + q);
-  return (data && data.data && data.data.books) || [];
+function generateId() {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-/**
- * Get book detail.
- * @param {string} id
- * @return {Promise<Object|null>}
- */
-async function getBookDetail(id) {
-  const data = await fetchJSON(API_BASE + '/books/' + id);
-  return (data && data.data && data.data.book) || null;
-}
 
 /**
  * Create DOM element for a book item.
@@ -135,39 +115,29 @@ function createBookElement(book) {
   container.appendChild(year);
   container.appendChild(actions);
 
-  // Handlers
+  // Toggle finished using localStorage
   toggleBtn.addEventListener('click', async () => {
-    try {
-      const toComplete = !book.finished;
-      const payload = {
-        name: book.name,
-        year: book.year,
-        author: book.author,
-        summary: book.summary || '',
-        publisher: book.publisher || '',
-        pageCount: book.pageCount || 1,
-        readPage: toComplete ? (book.pageCount || 1) : 0,
-        reading: !toComplete,
-      };
-      await fetchJSON(API_BASE + '/books/' + book.id, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
-      await renderLists(els.searchTitleInput.value.trim());
-    } catch (e) {
-      alert('Gagal mengubah status buku: ' + e.message);
+    const books = loadBooks();
+    const idx = books.findIndex((b) => b.id === book.id);
+    if (idx !== -1) {
+      books[idx].finished = !books[idx].finished;
+      saveBooks(books);
+      const q = els.searchTitleInput.value.trim();
+      await renderLists(q);
     }
   });
 
+  // Delete using localStorage
   deleteBtn.addEventListener('click', async () => {
-    try {
-      await fetchJSON(API_BASE + '/books/' + book.id, {method: 'DELETE'});
-      await renderLists(els.searchTitleInput.value.trim());
-    } catch (e) {
-      alert('Gagal menghapus buku: ' + e.message);
-    }
+    const ok = confirm('Apakah Anda yakin ingin menghapus buku ini?');
+    if (!ok) return;
+    const books = loadBooks().filter((b) => b.id !== book.id);
+    saveBooks(books);
+    const q = els.searchTitleInput.value.trim();
+    await renderLists(q);
   });
 
+  // Inline edit: update localStorage
   editBtn.addEventListener('click', () => {
     let form = container.querySelector('[data-testid="bookItemEditForm"]');
     if (form) {
@@ -229,27 +199,18 @@ function createBookElement(book) {
       const newTitle = titleInput.value.trim();
       const newAuthor = authorInput.value.trim();
       const newYearRaw = yearInput.value.trim();
-      const newYear = Number(newYearRaw) ||
-          book.year || new Date().getFullYear();
+      const parsedYear = Number(newYearRaw);
+      const newYear = parsedYear || book.year || new Date().getFullYear();
 
-      try {
-        const payload = {
-          name: newTitle || book.name,
-          year: newYear,
-          author: newAuthor || book.author,
-          summary: book.summary || '',
-          publisher: book.publisher || '',
-          pageCount: book.pageCount || 1,
-          readPage: book.readPage || 0,
-          reading: !!book.reading,
-        };
-        await fetchJSON(API_BASE + '/books/' + book.id, {
-          method: 'PUT',
-          body: JSON.stringify(payload),
-        });
-        await renderLists(els.searchTitleInput.value.trim());
-      } catch (e) {
-        alert('Gagal mengubah data buku: ' + e.message);
+      const books = loadBooks();
+      const idx = books.findIndex((b) => b.id === book.id);
+      if (idx !== -1) {
+        books[idx].name = newTitle || book.name;
+        books[idx].author = newAuthor || book.author;
+        books[idx].year = newYear;
+        saveBooks(books);
+        const q = els.searchTitleInput.value.trim();
+        await renderLists(q);
       }
     });
   });
@@ -266,27 +227,15 @@ async function renderLists(searchTerm = '') {
   els.completeList.innerHTML = '';
 
   try {
-    const listToShow = [];
-    if (searchTerm) {
-      const byName = await getBooksByName(searchTerm);
-      for (const b of byName) {
-        const detail = await getBookDetail(b.id);
-        if (detail) listToShow.push(detail);
-      }
-    } else {
-      const incomplete = await getBooksByFinished(false);
-      for (const b of incomplete) {
-        const detail = await getBookDetail(b.id);
-        if (detail) listToShow.push(detail);
-      }
-      const complete = await getBooksByFinished(true);
-      for (const b of complete) {
-        const detail = await getBookDetail(b.id);
-        if (detail) listToShow.push(detail);
-      }
+    const books = loadBooks();
+    const q = (searchTerm || '').trim().toLowerCase();
+    let listToShow = books;
+    if (q) {
+      listToShow = books.filter((b) => {
+        return (b.name || '').toLowerCase().includes(q);
+      });
     }
 
-    // Render grouped by finished
     for (const book of listToShow) {
       const el = createBookElement(book);
       if (book.finished) {
@@ -318,31 +267,24 @@ async function addBookFromForm(evt) {
     return;
   }
 
-  const payload = {
-    name: name,
-    year: year,
-    author: author,
-    summary: '',
-    publisher: '',
-    pageCount: 1,
-    readPage: isComplete ? 1 : 0,
-    reading: !isComplete,
+  const newBook = {
+    id: generateId(),
+    name,
+    author,
+    year,
+    finished: isComplete,
   };
 
-  try {
-    await fetchJSON(API_BASE + '/books', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    els.titleInput.value = '';
-    els.authorInput.value = '';
-    els.yearInput.value = '';
-    els.isCompleteCheckbox.checked = false;
-    setSubmitButtonText();
-    await renderLists(els.searchTitleInput.value.trim());
-  } catch (e) {
-    alert('Gagal menambahkan buku: ' + e.message);
-  }
+  const books = loadBooks();
+  books.push(newBook);
+  saveBooks(books);
+
+  els.titleInput.value = '';
+  els.authorInput.value = '';
+  els.yearInput.value = '';
+  els.isCompleteCheckbox.checked = false;
+  setSubmitButtonText();
+  await renderLists(els.searchTitleInput.value.trim());
 }
 
 /** Initialize DOM events. */
